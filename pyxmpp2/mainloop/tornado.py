@@ -102,6 +102,10 @@ class TornadoMainLoop(MainLoopBase):
                     now + ret.timeout,
                     partial(self._configure_io_handler, handler)
                 )
+            else:
+                self.io_loop.add_callback(
+                    partial(self._configure_io_handler, handler)
+                )
             prepared = False
         else:
             raise TypeError("Unexpected result type from prepare()")
