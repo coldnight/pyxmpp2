@@ -165,13 +165,7 @@ class TornadoMainLoop(MainLoopBase):
         self.io_loop.start()
 
     def loop_iteration(self, timeout=1):
-        if timeout is not None:
-            now = time.time()
-            to = self.io_loop.add_timeout(now + timeout, self.io_loop.stop)
-        else:
-            to = None
-        self.io_loop.add_callback(partial(self._iteration_done, to))
-        self.io_loop.start()
+        pass
 
     def _iteration_done(self, to):
         if to is not None:
