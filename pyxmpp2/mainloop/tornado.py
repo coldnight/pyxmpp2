@@ -148,10 +148,11 @@ class TornadoMainLoop(MainLoopBase):
     def quit(self):
         self.io_loop.stop()
         self._stopping = True
+        self._started = False
 
     @property
     def started(self):
-        return self.io_loop.running()
+        return self._started
 
     @property
     def finished(self):
@@ -162,7 +163,9 @@ class TornadoMainLoop(MainLoopBase):
         if timeout is not None:
             now = time.time()
             self.io_loop.add_timeout(now + timeout, self.io_loop.stop)
-        self.io_loop.start()
+        if not self._started:
+            self._started = True
+            self.io_loop.start()
 
     def loop_iteration(self, timeout=1):
         if timeout is not None:
@@ -180,10 +183,12 @@ class TornadoMainLoop(MainLoopBase):
 
     def _handle_event(self, handler, fd, event):
         logger.debug('_handle_event: %r, %r, %r', handler, fd, event)
+        if event & ioloop.IOLoop.ERROR:
+            handler.handle_hup()
+            self._configure_io_handler(handler)
+            return
         if event & ioloop.IOLoop.READ:
             handler.handle_read()
-        if event & ioloop.IOLoop.ERROR:
-            handler.handle_err()
         if event & ioloop.IOLoop.WRITE:
             handler.handle_write()
         self._configure_io_handler(handler)
