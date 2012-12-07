@@ -172,8 +172,6 @@ class TornadoMainLoop(MainLoopBase):
         logger.debug('_handle_event: %r, %r, %r', handler, fd, event)
         if event & ioloop.IOLoop.ERROR:
             handler.handle_hup()
-            self._configure_io_handler(handler)
-            return
         if event & ioloop.IOLoop.READ:
             handler.handle_read()
         if event & ioloop.IOLoop.WRITE:
