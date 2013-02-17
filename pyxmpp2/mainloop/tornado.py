@@ -23,14 +23,13 @@ import inspect
 import time
 
 from tornado import ioloop
-from .interfaces import HandlerReady, PrepareAgain
+from .interfaces import HandlerReady, PrepareAgain, QUIT
 from .base import MainLoopBase
 
 logger = logging.getLogger(__name__)
 
 class TornadoMainLoop(MainLoopBase):
     """Main event loop based on Tornado's ioloop."""
-    _stopping = False
 
     def __init__(self, settings = None, handlers = None, io_loop=None):
         self._handlers = {}
@@ -146,27 +145,24 @@ class TornadoMainLoop(MainLoopBase):
             self.io_loop.remove_handler(fileno)
 
     def quit(self):
+        self._quit = True
         self.io_loop.stop()
-        self._stopping = True
-
-    @property
-    def finished(self):
-        return self._stopping
 
     def loop(self, timeout=None):
         logger.debug('looping, timeout is %r', timeout)
         if timeout is not None:
             now = time.time()
-            self.io_loop.add_timeout(now + timeout, self.io_loop.stop)
+            self.io_loop.add_timeout(now + timeout, self.quit)
         self.io_loop.start()
 
     def loop_iteration(self, timeout=1):
         pass
 
-    def _iteration_done(self, to):
-        if to is not None:
-            self.io_loop.remove_timeout(to)
-        self.io_loop.stop()
+    def check_events(self):
+        if self.event_dispatcher.flush() is QUIT:
+            self.quit()
+            return True
+        return False
 
     def _handle_event(self, handler, fd, event):
         logger.debug('_handle_event: %r, %r, %r', handler, fd, event)
