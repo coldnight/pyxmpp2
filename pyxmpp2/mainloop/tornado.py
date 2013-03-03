@@ -58,6 +58,8 @@ class TornadoMainLoop(MainLoopBase):
         fileno = handler.fileno()
         if old_fileno is not None and fileno != old_fileno:
             del self._handlers[old_fileno]
+            # remove_handler won't raise something like KeyError if the fd
+            # isn't registered; it will just print a debug log.
             self.io_loop.remove_handler(old_fileno)
         if not prepared:
             self._unprepared_handlers[handler] = fileno
